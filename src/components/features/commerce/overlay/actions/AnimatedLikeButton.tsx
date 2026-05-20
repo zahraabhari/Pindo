@@ -26,7 +26,7 @@ function AnimatedLikeButtonInner({ videoId, className }: AnimatedLikeButtonProps
     <Button
       type="button"
       variant="icon"
-      size="icon"
+      size="icon-sm"
       aria-label={liked ? "Unlike" : "Like"}
       disabled={pending}
       onClick={handleClick}

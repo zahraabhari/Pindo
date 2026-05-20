@@ -1,7 +1,7 @@
 "use client";
 
-import { AnimatedBookmarkButton } from "@/components/features/commerce/actions/AnimatedBookmarkButton";
-import { AnimatedLikeButton } from "@/components/features/commerce/actions/AnimatedLikeButton";
+import { AnimatedBookmarkButton } from "@/components/features/commerce/overlay/actions/AnimatedBookmarkButton";
+import { AnimatedLikeButton } from "@/components/features/commerce/overlay/actions/AnimatedLikeButton";
 import { Button, Icon, Typography } from "@/components/ui";
 import { usePlaybackUi } from "@/hooks/use-playback-ui";
 import { useUiStore } from "@/store/ui-store";
@@ -37,7 +37,7 @@ function SocialActionRailInner({
       <Button
         type="button"
         variant="icon"
-        size="icon"
+        size="icon-sm"
         aria-label={
           commentCount > 0
             ? `View ${commentCount} comments`

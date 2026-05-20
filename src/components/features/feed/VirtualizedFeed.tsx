@@ -7,7 +7,7 @@ import { FeedApiError, useFeedOrchestrator } from "@/services/feed/feed.hooks";
 import { useViewportHeight } from "@/hooks/use-viewport-height";
 import { Typography } from "@/components/ui";
 import type { FeedVideo } from "@/types/feed";
-import { memo, useCallback } from "react";
+import { memo, useCallback, useEffect, useState } from "react";
 import { Virtuoso, type ListRange } from "react-virtuoso";
 
 /**
@@ -44,6 +44,11 @@ function VirtualizedFeedInner() {
     fetchNextPage,
   } = useFeedOrchestrator();
   const itemHeight = useViewportHeight();
+  const [clientReady, setClientReady] = useState(false);
+
+  useEffect(() => {
+    setClientReady(true);
+  }, []);
 
   const itemContent = useCallback(
     (index: number, video: FeedVideo) => (
@@ -69,7 +74,7 @@ function VirtualizedFeedInner() {
     !isError &&
     (isPending || isFetching);
 
-  if (showInitialSkeleton) {
+  if (showInitialSkeleton || !clientReady) {
     return <FeedSkeleton />;
   }
 

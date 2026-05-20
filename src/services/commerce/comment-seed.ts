@@ -12,6 +12,7 @@ const SEED_TEXTS = [
 
 export function seedCommentsForVideo(videoId: string, count = 8): Comment[] {
   const h = videoId.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
+  const baseTime = 1_700_000_000_000;
   return Array.from({ length: count }, (_, i) => {
     const idx = (h + i) % SEED_USERS.length;
     return {
@@ -19,7 +20,7 @@ export function seedCommentsForVideo(videoId: string, count = 8): Comment[] {
       videoId,
       username: SEED_USERS[idx]!,
       text: SEED_TEXTS[(h + i) % SEED_TEXTS.length]!,
-      createdAt: new Date(Date.now() - (i + 1) * 3600_000).toISOString(),
+      createdAt: new Date(baseTime - (i + 1) * 3600_000).toISOString(),
       likes: (h + i) % 24,
     };
   });

@@ -17,7 +17,7 @@ function AnimatedBookmarkButtonInner({ itemId, className }: AnimatedBookmarkButt
     <Button
       type="button"
       variant="icon"
-      size="icon"
+      size="icon-sm"
       aria-label={saved ? "Remove bookmark" : "Save"}
       onClick={() => toggleSave(itemId)}
       className={`${saved ? "text-amber-400" : "text-white"} h-10 w-10 ${className ?? ""}`}
