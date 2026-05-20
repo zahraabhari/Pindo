@@ -2,13 +2,13 @@
 
 import { Button, Icon, Typography } from "@/components/ui";
 import { TRENDING_QUERIES, useSearchStore } from "@/store/search-store";
-import { memo, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 interface SearchExploreStripProps {
   onSelect: (query: string) => void;
 }
 
-function SearchExploreStripInner({ onSelect }: SearchExploreStripProps) {
+export function SearchExploreStrip({ onSelect }: SearchExploreStripProps) {
   const history = useSearchStore((s) => s.history);
   const clearHistory = useSearchStore((s) => s.clearHistory);
   const [mounted, setMounted] = useState(false);
@@ -70,5 +70,3 @@ function SearchExploreStripInner({ onSelect }: SearchExploreStripProps) {
     </div>
   );
 }
-
-export const SearchExploreStrip = memo(SearchExploreStripInner);

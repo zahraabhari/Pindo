@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/cn";
-import { memo, type HTMLAttributes } from "react";
+import { type HTMLAttributes } from "react";
 
 export type CardVariant = "surface" | "glass" | "elevated" | "ghost";
 
@@ -17,7 +17,7 @@ export interface CardProps extends HTMLAttributes<HTMLDivElement> {
   padding?: "none" | "sm" | "md";
 }
 
-function CardInner({
+export function Card({
   variant = "surface",
   padding = "none",
   className,
@@ -39,5 +39,3 @@ function CardInner({
     </div>
   );
 }
-
-export const Card = memo(CardInner);

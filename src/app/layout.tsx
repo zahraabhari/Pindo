@@ -27,8 +27,12 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
-      <body className="min-h-full overflow-hidden bg-black text-white">
+      <body
+        className="min-h-full overflow-hidden bg-black text-white"
+        suppressHydrationWarning
+      >
         <QueryProvider>{children}</QueryProvider>
       </body>
     </html>

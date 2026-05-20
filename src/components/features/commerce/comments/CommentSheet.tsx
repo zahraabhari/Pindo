@@ -10,9 +10,9 @@ import {
   useLiveCommentSimulation,
 } from "@/services/comments/comments.hooks";
 import { useUiStore } from "@/store/ui-store";
-import { memo, useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
-function CommentSheetInner() {
+export function CommentSheet() {
   const sheet = useUiStore((s) => s.sheet);
   const videoId = useUiStore((s) => s.activeVideoId);
   const closeSheet = useUiStore((s) => s.closeSheet);
@@ -112,5 +112,3 @@ function CommentSheetInner() {
     </BottomSheet>
   );
 }
-
-export const CommentSheet = memo(CommentSheetInner);

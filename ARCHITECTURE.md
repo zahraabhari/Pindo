@@ -49,10 +49,11 @@ UI component
 
 ```
 components/features/commerce/
-  actions/     AnimatedLikeButton, AnimatedBookmarkButton
+  cart/        CartSheet, CartIconButton, AddToCartButton, CartLineItem, CartToast
+  actions/     (under overlay/) AnimatedLikeButton, AnimatedBookmarkButton
   comments/    CommentSheet, CommentRow, CommentRowSkeleton
   overlay/     SocialActionRail, VideoDescription
-  purchase/    PurchaseDMModal
+  purchase/    PurchaseDMModal (DM / message seller only)
   shared/      BottomSheet
 ```
 
@@ -60,6 +61,7 @@ components/features/commerce/
 
 | Store | Purpose |
 |-------|---------|
+| `cart-store` | Cart items + localStorage persist (Zustand persist, client rehydrate) |
 | `feed-runtime-store` | Scroll velocity, scheduler snapshot, preload tiers |
 | `playback-store` | Active video mirror for UI |
 | `interaction-store` | Optimistic likes/saves |
@@ -69,7 +71,8 @@ components/features/commerce/
 
 ## Performance conventions
 
-- `React.memo` on list/grid cells and heavy overlays.
+- `React.memo` on list/grid cells (`FeedItem`, `DiscoverCard`, `CommentRow`, `CartLineItem`), heavy overlays (`VideoOverlay`, `PooledFeedItemMedia`, `VideoPlayer`), and overlay children that should not rerender when only sibling props change (`SocialActionRail`, `VideoDescription`).
+- Omit `memo` on components that subscribe to Zustand/React Query (likes, cart buttons, sheets) or on shells whose parents rarely rerender.
 - `useStableCallback` for scroll handlers passed to memoized children.
 - Virtualized feed (`react-virtuoso`) and windowed discover masonry.
 - Lazy media: `loading="lazy"` / `preload="none"` on images and videos.

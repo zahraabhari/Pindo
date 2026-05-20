@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/cn";
-import { memo, type HTMLAttributes } from "react";
+import { type HTMLAttributes } from "react";
 
 const roundedMap = {
   md: "rounded-md",
@@ -14,7 +14,7 @@ export interface SkeletonProps extends HTMLAttributes<HTMLDivElement> {
   rounded?: keyof typeof roundedMap;
 }
 
-function SkeletonInner({ className, rounded = "lg", ...props }: SkeletonProps) {
+export function Skeleton({ className, rounded = "lg", ...props }: SkeletonProps) {
   return (
     <div
       className={cn("skeleton-shimmer bg-zinc-800/90", roundedMap[rounded], className)}
@@ -23,5 +23,3 @@ function SkeletonInner({ className, rounded = "lg", ...props }: SkeletonProps) {
     />
   );
 }
-
-export const Skeleton = memo(SkeletonInner);

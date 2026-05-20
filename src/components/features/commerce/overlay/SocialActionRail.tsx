@@ -1,5 +1,6 @@
 "use client";
 
+import { AddToCartButton } from "@/components/features/commerce/cart/AddToCartButton";
 import { AnimatedBookmarkButton } from "@/components/features/commerce/overlay/actions/AnimatedBookmarkButton";
 import { AnimatedLikeButton } from "@/components/features/commerce/overlay/actions/AnimatedLikeButton";
 import { Button, Icon, Typography } from "@/components/ui";
@@ -89,20 +90,7 @@ function SocialActionRailInner({
         <Icon name="send" size="sm" />
       </Button>
 
-      <Button
-        type="button"
-        variant="primary"
-        size="sm"
-        onClick={() =>
-          openPurchaseWithSnapshot(video.id, {
-            productTitle: video.product?.productTitle ?? video.title,
-            sellerUsername: video.product?.username ?? `@${video.author}`,
-          })
-        }
-        className="font-bold"
-      >
-        Buy Now
-      </Button>
+      <AddToCartButton video={video} />
     </div>
   );
 }

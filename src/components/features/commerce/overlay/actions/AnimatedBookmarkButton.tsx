@@ -2,14 +2,13 @@
 
 import { Button, Icon } from "@/components/ui";
 import { useInteractionStore } from "@/store/interaction-store";
-import { memo } from "react";
 
 interface AnimatedBookmarkButtonProps {
   itemId: string;
   className?: string;
 }
 
-function AnimatedBookmarkButtonInner({ itemId, className }: AnimatedBookmarkButtonProps) {
+export function AnimatedBookmarkButton({ itemId, className }: AnimatedBookmarkButtonProps) {
   const saved = useInteractionStore((s) => s.saved[itemId] ?? false);
   const toggleSave = useInteractionStore((s) => s.toggleSave);
 
@@ -31,5 +30,3 @@ function AnimatedBookmarkButtonInner({ itemId, className }: AnimatedBookmarkButt
     </Button>
   );
 }
-
-export const AnimatedBookmarkButton = memo(AnimatedBookmarkButtonInner);

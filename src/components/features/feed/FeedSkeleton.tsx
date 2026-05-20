@@ -2,7 +2,6 @@
 
 import { Skeleton } from "@/components/ui";
 import { useViewportHeight } from "@/hooks/use-viewport-height";
-import { memo } from "react";
 
 const SKELETON_COUNT = 4;
 
@@ -29,7 +28,7 @@ function FeedSkeletonCard({ height }: { height: number }) {
   );
 }
 
-function FeedSkeletonInner() {
+export function FeedSkeleton() {
   const itemHeight = useViewportHeight();
 
   return (
@@ -44,5 +43,3 @@ function FeedSkeletonInner() {
     </div>
   );
 }
-
-export const FeedSkeleton = memo(FeedSkeletonInner);

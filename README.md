@@ -28,6 +28,9 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for layering rules and data flow.
 | **Scheduler** | `services/feed/feed.scheduler.ts` — preload tiers from scroll velocity |
 | **Video pool** | `components/features/video/video-pool.ts` — 3 reused DOM nodes |
 | **Optimistic likes** | `store/interaction-store.ts` |
+| **Cart** | `store/cart-store.ts` (persist) + sheet/toast in `components/features/commerce/cart/` |
+
+`React.memo` is used only on virtualized list cells, heavy video overlays, and store-driven controls that do not subscribe to global state themselves — see [ARCHITECTURE.md](./ARCHITECTURE.md#performance-conventions).
 
 ## Setup
 

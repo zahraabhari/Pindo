@@ -4,9 +4,9 @@ import { BottomSheet } from "@/components/features/commerce/shared/BottomSheet";
 import { Button, Icon, Typography } from "@/components/ui";
 import { usePurchaseStore } from "@/store/purchase-store";
 import { useUiStore } from "@/store/ui-store";
-import { memo, useEffect, useMemo } from "react";
+import { useEffect, useMemo } from "react";
 
-function PurchaseDMModalInner() {
+export function PurchaseDMModal() {
   const sheet = useUiStore((s) => s.sheet);
   const videoId = useUiStore((s) => s.activeVideoId);
   const purchaseSnapshot = useUiStore((s) => s.purchaseSnapshot);
@@ -29,16 +29,17 @@ function PurchaseDMModalInner() {
 
   useEffect(() => {
     if (!open || !videoId) return;
+    if (purchaseIntent !== "message") return;
     if (session?.videoId === videoId) return;
 
     const hasSnapshot = Boolean(purchaseSnapshot);
-
     if (!hasSnapshot) return;
 
     startPurchase(videoId, productTitle, sellerUsername);
   }, [
     open,
     videoId,
+    purchaseIntent,
     purchaseSnapshot,
     productTitle,
     sellerUsername,
@@ -152,5 +153,3 @@ function PurchaseDMModalInner() {
     </BottomSheet>
   );
 }
-
-export const PurchaseDMModal = memo(PurchaseDMModalInner);

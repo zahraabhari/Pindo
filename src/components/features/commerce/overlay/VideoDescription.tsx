@@ -99,4 +99,10 @@ function VideoDescriptionInner({
   );
 }
 
-export const VideoDescription = memo(VideoDescriptionInner);
+export const VideoDescription = memo(
+  VideoDescriptionInner,
+  (prev, next) =>
+    prev.product === next.product &&
+    prev.commentCount === next.commentCount &&
+    prev.onOpenComments === next.onOpenComments,
+);

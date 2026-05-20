@@ -14,9 +14,9 @@ import {
 } from "@/services/search/search.hooks";
 import { useSearchStore } from "@/store/search-store";
 import type { DiscoveryItem } from "@/types/discovery";
-import { memo, useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
-function SearchPageInner() {
+export function SearchPage() {
   const [input, setInput] = useState(FEED_SEARCH_QUERY);
   const [activeItemId, setActiveItemId] = useState<string | null>(null);
   const debounced = useDebouncedValue(input, 350);
@@ -112,5 +112,3 @@ function SearchPageInner() {
     </main>
   );
 }
-
-export const SearchPage = memo(SearchPageInner);

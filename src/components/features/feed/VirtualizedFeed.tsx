@@ -7,7 +7,7 @@ import { FeedApiError, useFeedOrchestrator } from "@/services/feed/feed.hooks";
 import { useViewportHeight } from "@/hooks/use-viewport-height";
 import { Typography } from "@/components/ui";
 import type { FeedVideo } from "@/types/feed";
-import { memo, useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Virtuoso, type ListRange } from "react-virtuoso";
 
 /**
@@ -27,7 +27,7 @@ import { Virtuoso, type ListRange } from "react-virtuoso";
  * Playback state: keyed by video.id in playback engine + pooled <video>,
  * NOT by React tree position — survives index shifts after pagination.
  */
-function VirtualizedFeedInner() {
+export function VirtualizedFeed() {
   const {
     videos,
     onRangeChanged,
@@ -142,5 +142,3 @@ function VirtualizedFeedInner() {
     </>
   );
 }
-
-export const VirtualizedFeed = memo(VirtualizedFeedInner);

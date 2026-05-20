@@ -1,7 +1,8 @@
 "use client";
 
 import { Typography } from "@/components/ui";
-import { memo, useEffect, useState } from "react";
+import { cn } from "@/lib/cn";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 
 interface BottomSheetProps {
@@ -11,13 +12,24 @@ interface BottomSheetProps {
   children: React.ReactNode;
 }
 
-function BottomSheetInner({ open, onClose, title, children }: BottomSheetProps) {
+export function BottomSheet({ open, onClose, title, children }: BottomSheetProps) {
   const [mounted, setMounted] = useState(false);
+  const [visible, setVisible] = useState(false);
 
   useEffect(() => setMounted(true), []);
 
   useEffect(() => {
-    if (!open) return;
+    if (open) {
+      setVisible(true);
+      return;
+    }
+    if (!visible) return;
+    const t = setTimeout(() => setVisible(false), 280);
+    return () => clearTimeout(t);
+  }, [open, visible]);
+
+  useEffect(() => {
+    if (!open || !visible) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
@@ -27,9 +39,9 @@ function BottomSheetInner({ open, onClose, title, children }: BottomSheetProps) 
       window.removeEventListener("keydown", onKey);
       document.body.style.overflow = "";
     };
-  }, [open, onClose]);
+  }, [open, visible, onClose]);
 
-  if (!open || !mounted) return null;
+  if (!mounted || !visible) return null;
 
   return createPortal(
     <div
@@ -40,12 +52,20 @@ function BottomSheetInner({ open, onClose, title, children }: BottomSheetProps) 
     >
       <button
         type="button"
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        className={cn(
+          "sheet-backdrop absolute inset-0 bg-black/60 backdrop-blur-sm",
+          open ? "sheet-backdrop-in" : "sheet-backdrop-out",
+        )}
         aria-label="Close"
         onClick={onClose}
       />
-      <div className="sheet-panel relative z-10 mx-auto flex w-full max-w-md max-h-[85dvh] min-h-[50dvh] flex-col rounded-t-2xl bg-zinc-900 shadow-2xl">
-        <div className="flex shrink-0 items-center justify-center py-2">
+      <div
+        className={cn(
+          "sheet-panel relative z-10 mx-auto flex w-full max-w-md max-h-[min(85dvh,640px)] min-h-[42dvh] flex-col rounded-t-2xl bg-zinc-900 shadow-2xl",
+          open ? "sheet-panel-in" : "sheet-panel-out",
+        )}
+      >
+        <div className="flex shrink-0 items-center justify-center py-2.5">
           <div className="h-1 w-10 rounded-full bg-white/20" />
         </div>
         <div className="shrink-0 px-4 pb-2 pt-0.5">
@@ -61,5 +81,3 @@ function BottomSheetInner({ open, onClose, title, children }: BottomSheetProps) 
     document.body,
   );
 }
-
-export const BottomSheet = memo(BottomSheetInner);

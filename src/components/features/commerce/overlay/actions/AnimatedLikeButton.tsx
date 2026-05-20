@@ -3,14 +3,14 @@
 import { Button, Icon } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { useInteractionStore } from "@/store/interaction-store";
-import { memo, useState } from "react";
+import { useState } from "react";
 
 interface AnimatedLikeButtonProps {
   videoId: string;
   className?: string;
 }
 
-function AnimatedLikeButtonInner({ videoId, className }: AnimatedLikeButtonProps) {
+export function AnimatedLikeButton({ videoId, className }: AnimatedLikeButtonProps) {
   const liked = useInteractionStore((s) => s.likes[videoId] ?? false);
   const pending = useInteractionStore((s) => s.pending[videoId] ?? false);
   const toggleLike = useInteractionStore((s) => s.toggleLike);
@@ -46,5 +46,3 @@ function AnimatedLikeButtonInner({ videoId, className }: AnimatedLikeButtonProps
     </Button>
   );
 }
-
-export const AnimatedLikeButton = memo(AnimatedLikeButtonInner);

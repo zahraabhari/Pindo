@@ -4,7 +4,7 @@ import { cn } from "@/lib/cn";
 import { tokens } from "@/lib/tokens";
 import type { LucideIcon, LucideProps } from "lucide-react";
 import * as LucideIcons from "lucide-react";
-import { createElement, memo } from "react";
+import { createElement } from "react";
 
 function toPascalCase(name: string): string {
   return name
@@ -44,7 +44,7 @@ export interface IconProps extends Omit<LucideProps, "size"> {
   className?: string;
 }
 
-function IconInner({
+export function Icon({
   name,
   icon: IconProp,
   size = "md",
@@ -66,5 +66,3 @@ function IconInner({
     ...props,
   });
 }
-
-export const Icon = memo(IconInner);

@@ -1,9 +1,8 @@
 "use client";
 
 import { Skeleton } from "@/components/ui";
-import { memo } from "react";
 
-function CommentRowSkeletonInner() {
+export function CommentRowSkeleton() {
   return (
     <li className="flex gap-2 px-3 py-1">
       <Skeleton className="mt-0.5 h-8 w-8 shrink-0" rounded="full" />
@@ -14,5 +13,3 @@ function CommentRowSkeletonInner() {
     </li>
   );
 }
-
-export const CommentRowSkeleton = memo(CommentRowSkeletonInner);

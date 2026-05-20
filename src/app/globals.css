@@ -48,7 +48,7 @@ body {
 @keyframes sheet-up {
   from {
     transform: translateY(100%);
-    opacity: 0.6;
+    opacity: 0.5;
   }
   to {
     transform: translateY(0);
@@ -56,8 +56,54 @@ body {
   }
 }
 
+@keyframes sheet-down {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(100%);
+    opacity: 0.5;
+  }
+}
+
+@keyframes sheet-backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes sheet-backdrop-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.sheet-panel-in {
+  animation: sheet-up 0.34s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.sheet-panel-out {
+  animation: sheet-down 0.28s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.sheet-backdrop-in {
+  animation: sheet-backdrop-in 0.28s ease-out forwards;
+}
+
+.sheet-backdrop-out {
+  animation: sheet-backdrop-out 0.24s ease-out forwards;
+}
+
+/* Legacy alias */
 .sheet-panel {
-  animation: sheet-up 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+  animation: sheet-up 0.34s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 @keyframes dm-spin {
@@ -99,6 +145,21 @@ body {
 
 .dm-check {
   animation: dm-check-pop 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes cart-checkout-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.cart-checkout-panel {
+  animation: cart-checkout-in 0.38s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .nav-glass {

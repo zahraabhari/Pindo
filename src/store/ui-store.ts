@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-type SheetType = "none" | "comments" | "purchase";
+type SheetType = "none" | "comments" | "purchase" | "cart";
 
 export type PurchaseIntent = "order" | "message";
 
@@ -15,6 +15,7 @@ interface UiStore {
   purchaseSnapshot: PurchaseProductSnapshot | null;
   purchaseIntent: PurchaseIntent;
   openComments: (videoId: string) => void;
+  openCart: () => void;
   openPurchase: (videoId: string) => void;
   openMessageSeller: (videoId: string) => void;
   openPurchaseWithSnapshot: (
@@ -34,6 +35,13 @@ export const useUiStore = create<UiStore>((set) => ({
     set({
       sheet: "comments",
       activeVideoId: videoId,
+      purchaseSnapshot: null,
+      purchaseIntent: "order",
+    }),
+  openCart: () =>
+    set({
+      sheet: "cart",
+      activeVideoId: null,
       purchaseSnapshot: null,
       purchaseIntent: "order",
     }),
