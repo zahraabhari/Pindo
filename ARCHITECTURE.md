@@ -80,5 +80,6 @@ components/features/commerce/
 
 ## Design tokens
 
-`src/lib/tokens.ts` defines spacing, color, radius, and z-index scales.  
-`src/app/globals.css` exposes key tokens as CSS variables (`--ds-*`).
+`src/lib/tokens.ts` defines spacing, color, radius, z-index, and typography (`--font-inter`).  
+`src/lib/fonts/inter.ts` loads Inter variable (woff2).  
+`src/app/globals.css` exposes key tokens as CSS variables (`--ds-*`) and wires `--font-sans` in `@theme`.

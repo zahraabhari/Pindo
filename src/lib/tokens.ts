@@ -69,6 +69,9 @@ export const tokens = {
     md: 20,
     lg: 24,
   },
+  typography: {
+    fontFamily: "var(--font-inter)",
+  },
 } as const;
 
 export type TokenColor = keyof typeof tokens.color;
