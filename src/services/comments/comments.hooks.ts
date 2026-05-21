@@ -1,27 +1,57 @@
 "use client";
 
+import { seedCommentsForVideo } from "@/services/commerce/comment-seed";
 import { fetchComments, postComment } from "@/services/comments/comments.api";
 import {
   commentsLiveQueryKey,
   commentsQueryKey,
 } from "@/services/comments/comments.keys";
 import type { Comment } from "@/services/comments/comments.types";
+import { useOnlineStatus } from "@/hooks/use-online-status";
 import {
   useMutation,
   useQuery,
   useQueryClient,
+  type UseQueryOptions,
 } from "@tanstack/react-query";
 
 export { commentsQueryKey, commentsLiveQueryKey } from "@/services/comments/comments.keys";
 export type { Comment } from "@/services/comments/comments.types";
 
-export function useComments(videoId: string | null) {
-  return useQuery({
-    queryKey: commentsQueryKey(videoId ?? ""),
-    queryFn: () => fetchComments(videoId!),
-    enabled: Boolean(videoId),
+function commentsQueryOptions(
+  videoId: string,
+  enabled: boolean,
+): UseQueryOptions<Comment[], Error, Comment[], ReturnType<typeof commentsQueryKey>> {
+  return {
+    queryKey: commentsQueryKey(videoId),
+    queryFn: () => fetchComments(videoId),
+    enabled,
+    initialData: () => seedCommentsForVideo(videoId),
     staleTime: 30_000,
-  });
+    retry: (failureCount) => {
+      if (typeof navigator !== "undefined" && !navigator.onLine) {
+        return false;
+      }
+      return failureCount < 1;
+    },
+  };
+}
+
+export function useComments(
+  videoId: string | null,
+  options?: { enabled?: boolean },
+) {
+  const queryEnabled = (options?.enabled ?? true) && Boolean(videoId);
+
+  return useQuery(
+    videoId
+      ? commentsQueryOptions(videoId, queryEnabled)
+      : {
+          queryKey: commentsQueryKey(""),
+          queryFn: () => Promise.resolve([] as Comment[]),
+          enabled: false,
+        },
+  );
 }
 
 export function useAddComment(videoId: string | null) {
@@ -65,12 +95,12 @@ export function useAddComment(videoId: string | null) {
   });
 }
 
-/** Simulates live comments arriving while sheet is open */
 export function useLiveCommentSimulation(
   videoId: string | null,
   enabled: boolean,
 ) {
   const queryClient = useQueryClient();
+  const { isOnline } = useOnlineStatus();
 
   return useQuery({
     queryKey: commentsLiveQueryKey(videoId),
@@ -92,19 +122,21 @@ export function useLiveCommentSimulation(
       });
       return live;
     },
-    enabled: Boolean(videoId) && enabled,
-    refetchInterval: 12_000,
+    enabled: Boolean(videoId) && enabled && isOnline,
+    refetchInterval: isOnline ? 12_000 : false,
     staleTime: 0,
   });
 }
 
+/** Subscribes to the shared comments cache (overlay + sheet stay in sync). */
 export function useCommentCount(videoId: string) {
-  const queryClient = useQueryClient();
-  const comments = queryClient.getQueryData<Comment[]>(commentsQueryKey(videoId));
+  const { data, isFetching, isFetched } = useQuery(
+    commentsQueryOptions(videoId, false),
+  );
 
   return {
-    count: comments?.length ?? 0,
-    isLoading: false,
-    hasData: comments !== undefined,
+    count: data?.length ?? 0,
+    isLoading: !isFetched && isFetching,
+    hasData: isFetched,
   };
 }

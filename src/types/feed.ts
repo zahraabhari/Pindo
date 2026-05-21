@@ -1,7 +1,5 @@
 import type { ProductMeta } from "@/types/commerce";
 
-
-
 export interface FeedVideo {
   id: string;
   key: string;
@@ -15,10 +13,20 @@ export interface FeedVideo {
   product?: ProductMeta;
 }
 
+/** Cursor-paginated slice — single continuous stream segment */
+export interface FeedSlice {
+  items: FeedVideo[];
+  nextCursor: string | null;
+  hasMore: boolean;
+  source: "pexels" | "mock" | "cache";
+  upstream?: string;
+  searchQuery?: string;
+}
+
 export interface FeedPage {
   videos: FeedVideo[];
   nextPage: number | null;
-  source: "pexels" | "mock" | "cache";
+  source: FeedSlice["source"];
   upstream?: string;
   searchQuery?: string;
 }

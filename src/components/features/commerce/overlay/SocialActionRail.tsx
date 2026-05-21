@@ -4,6 +4,7 @@ import { AddToCartButton } from "@/components/features/commerce/cart/AddToCartBu
 import { AnimatedBookmarkButton } from "@/components/features/commerce/overlay/actions/AnimatedBookmarkButton";
 import { AnimatedLikeButton } from "@/components/features/commerce/overlay/actions/AnimatedLikeButton";
 import { Button, Icon, Typography } from "@/components/ui";
+import { useCommerceOfflineGuard } from "@/hooks/use-commerce-offline-guard";
 import { usePlaybackUi } from "@/hooks/use-playback-ui";
 import { useUiStore } from "@/store/ui-store";
 import type { FeedVideo } from "@/types/feed";
@@ -22,6 +23,7 @@ function SocialActionRailInner({
 }: SocialActionRailProps) {
   const openComments = useUiStore((s) => s.openComments);
   const openPurchaseWithSnapshot = useUiStore((s) => s.openPurchaseWithSnapshot);
+  const { guardCommerceAction } = useCommerceOfflineGuard();
   const { isActive, showPauseIcon, togglePlayback } = usePlaybackUi(video.id);
 
   const countLabel =
@@ -76,13 +78,15 @@ function SocialActionRailInner({
         size="icon-sm"
         aria-label="Message seller"
         onClick={() =>
-          openPurchaseWithSnapshot(
-            video.id,
-            {
-              productTitle: video.product?.productTitle ?? video.title,
-              sellerUsername: video.product?.username ?? `@${video.author}`,
-            },
-            "message",
+          guardCommerceAction(() =>
+            openPurchaseWithSnapshot(
+              video.id,
+              {
+                productTitle: video.product?.productTitle ?? video.title,
+                sellerUsername: video.product?.username ?? `@${video.author}`,
+              },
+              "message",
+            ),
           )
         }
         className="h-10 w-10"

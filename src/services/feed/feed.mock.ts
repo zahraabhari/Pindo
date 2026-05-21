@@ -1,5 +1,6 @@
 import { enrichVideoWithProduct } from "@/services/commerce/enrich-product";
-import type { FeedPage, FeedVideo } from "@/types/feed";
+import { buildNextCursor } from "@/services/feed/feed.cursor";
+import type { FeedSlice, FeedVideo } from "@/types/feed";
 
 const MOCK_SOURCES: Pick<FeedVideo, "src" | "poster" | "title" | "author">[] = [
   {
@@ -40,16 +41,17 @@ const MOCK_SOURCES: Pick<FeedVideo, "src" | "poster" | "title" | "author">[] = [
 ];
 
 const PER_PAGE = 5;
+const MAX_PAGE = 10;
 
 function buildMockVideo(globalIndex: number): FeedVideo {
   const template = MOCK_SOURCES[globalIndex % MOCK_SOURCES.length]!;
-  const pageChunk = Math.floor(globalIndex / MOCK_SOURCES.length);
+  const chunk = Math.floor(globalIndex / MOCK_SOURCES.length);
   const id = `mock-${globalIndex}`;
 
   return enrichVideoWithProduct({
     id,
     key: id,
-    title: `${template.title} #${pageChunk + 1}`,
+    title: `${template.title} · ${chunk + 1}`,
     author: template.author,
     src: template.src,
     poster: template.poster,
@@ -59,19 +61,34 @@ function buildMockVideo(globalIndex: number): FeedVideo {
   });
 }
 
-export async function fetchMockFeedPage(page: number): Promise<FeedPage> {
-  await delay(80);
-
+function sliceFromPage(page: number, query: string): FeedSlice {
   const start = (page - 1) * PER_PAGE;
-  const videos = Array.from({ length: PER_PAGE }, (_, i) =>
+  const items = Array.from({ length: PER_PAGE }, (_, i) =>
     buildMockVideo(start + i),
   );
+  const hasMore = page < MAX_PAGE;
 
   return {
-    videos,
-    nextPage: page < 10 ? page + 1 : null,
+    items,
+    nextCursor: buildNextCursor(page, hasMore, query),
+    hasMore,
     source: "mock",
+    searchQuery: query,
   };
+}
+
+export async function fetchMockFeedSlice(
+  page: number,
+  query: string,
+): Promise<FeedSlice> {
+  await delay(80);
+  return sliceFromPage(page, query);
+}
+
+/** Fresh upstream head (always stream start) for SWR merge */
+export async function fetchMockFeedHead(query: string): Promise<FeedSlice> {
+  await delay(60);
+  return sliceFromPage(1, query);
 }
 
 function delay(ms: number) {

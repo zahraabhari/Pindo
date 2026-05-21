@@ -1,46 +1,79 @@
-import { fetchMockFeedPage } from "@/services/feed/feed.mock";
+import { fetchMockFeedHead, fetchMockFeedSlice } from "@/services/feed/feed.mock";
+import { decodeFeedCursor } from "@/services/feed/feed.cursor";
 import { shouldForceMockFeed } from "@/services/pexels/pexels.config";
 import { getRequest } from "@/services/api/axios";
 import { FEED_SEARCH_QUERY } from "@/services/feed/feed.keys";
-import { FeedApiError, type FeedPage } from "@/services/feed/feed.types";
+import { FeedApiError, type FeedSlice } from "@/services/feed/feed.types";
 import { isAxiosError } from "axios";
 
-let lastSuccessfulSource: FeedPage["source"] = "pexels";
+let lastSuccessfulSource: FeedSlice["source"] = "pexels";
 
 /**
- * Client → /api/videos?page=1&query=nature → Pexels /videos/search
+ * Client → GET /api/videos?cursor=<opaque>&query=…
+ * Head refresh → GET /api/videos/head?query=…
  */
-export async function fetchFeedPage(
-  page: number,
+export async function fetchFeedSlice(
+  cursor: string | null,
   query: string = FEED_SEARCH_QUERY,
-): Promise<FeedPage> {
+): Promise<FeedSlice> {
   if (shouldForceMockFeed()) {
-    return fetchMockFeedPage(page);
+    const { page, query: q } = decodeFeedCursor(cursor, query);
+    return fetchMockFeedSlice(page, q);
   }
 
-  return fetchFeedPageFromRoute(page, query);
+  return fetchFeedSliceFromRoute(cursor, query);
 }
 
-async function fetchFeedPageFromRoute(
-  page: number,
-  query: string,
-): Promise<FeedPage> {
+export async function fetchFeedHead(
+  query: string = FEED_SEARCH_QUERY,
+): Promise<FeedSlice> {
+  if (shouldForceMockFeed()) {
+    return fetchMockFeedHead(query);
+  }
+
   const maxAttempts = 3;
   let lastError: unknown;
 
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     try {
-      const data = await getRequest<FeedPage>("/api/videos", {
-        params: { page, query },
+      const data = await getRequest<FeedSlice>("/api/videos/head", {
+        params: { query },
       });
       lastSuccessfulSource = data.source;
       return data;
     } catch (err) {
       lastError = err;
       const apiErr = toFeedApiError(err);
-      if (apiErr.status === 503) {
-        throw apiErr;
-      }
+      if (apiErr.status === 503) throw apiErr;
+      await backoff(attempt);
+      lastError = apiErr;
+    }
+  }
+
+  throw lastError instanceof FeedApiError
+    ? lastError
+    : new FeedApiError("Could not refresh feed", "network_error", 0);
+}
+
+async function fetchFeedSliceFromRoute(
+  cursor: string | null,
+  query: string,
+): Promise<FeedSlice> {
+  const maxAttempts = 3;
+  let lastError: unknown;
+
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    try {
+      const params: { query: string; cursor?: string } = { query };
+      if (cursor) params.cursor = cursor;
+
+      const data = await getRequest<FeedSlice>("/api/videos", { params });
+      lastSuccessfulSource = data.source;
+      return data;
+    } catch (err) {
+      lastError = err;
+      const apiErr = toFeedApiError(err);
+      if (apiErr.status === 503) throw apiErr;
       await backoff(attempt);
       lastError = apiErr;
     }

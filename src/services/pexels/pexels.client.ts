@@ -3,8 +3,9 @@ import {
   getPexelsApiKey,
   getPexelsSearchUrl,
 } from "@/services/pexels/pexels.config";
+import { buildNextCursor } from "@/services/feed/feed.cursor";
 import { pexelsVideoToFeedVideo } from "@/services/pexels/pexels.mapper";
-import type { FeedPage } from "@/types/feed";
+import type { FeedSlice } from "@/types/feed";
 import type { PexelsVideosResponse } from "@/types/pexels";
 
 export class PexelsApiError extends Error {
@@ -20,8 +21,9 @@ export class PexelsApiError extends Error {
 async function fetchPexelsVideosFromUrl(
   upstream: string,
   page: number,
-  searchQuery?: string,
-): Promise<FeedPage & { upstream: string }> {
+  searchQuery: string,
+  perPage: number,
+): Promise<FeedSlice & { upstream: string }> {
   const apiKey = getPexelsApiKey();
   if (!apiKey) {
     throw new PexelsApiError(
@@ -43,30 +45,41 @@ async function fetchPexelsVideosFromUrl(
   }
 
   const data = (await res.json()) as PexelsVideosResponse;
-  const videos = data.videos
+  const items = data.videos
     .map(pexelsVideoToFeedVideo)
     .filter((v): v is NonNullable<typeof v> => v !== null);
 
-  if (videos.length === 0) {
-    throw new PexelsApiError("Pexels returned no playable videos for this page");
+  if (items.length === 0) {
+    throw new PexelsApiError("Pexels returned no playable videos for this cursor");
   }
 
+  const hasMore = Boolean(data.next_page);
+
   return {
-    videos,
-    nextPage: data.next_page ? page + 1 : null,
+    items,
+    nextCursor: buildNextCursor(page, hasMore, searchQuery),
+    hasMore,
     source: "pexels",
     upstream,
     searchQuery,
   };
 }
 
+export async function fetchPexelsFeedSlice(
+  page: number,
+  query?: string,
+  perPage = 15,
+): Promise<FeedSlice & { upstream: string }> {
+  const searchQuery = getFeedSearchQuery(query);
+  const upstream = getPexelsSearchUrl(searchQuery, page, perPage);
+  return fetchPexelsVideosFromUrl(upstream, page, searchQuery, perPage);
+}
 
+/** @deprecated Use fetchPexelsFeedSlice */
 export async function fetchPexelsSearchPage(
   page: number,
   query?: string,
   perPage = 15,
-): Promise<FeedPage & { upstream: string }> {
-  const searchQuery = getFeedSearchQuery(query);
-  const upstream = getPexelsSearchUrl(searchQuery, page, perPage);
-  return fetchPexelsVideosFromUrl(upstream, page, searchQuery);
+): Promise<FeedSlice & { upstream: string }> {
+  return fetchPexelsFeedSlice(page, query, perPage);
 }

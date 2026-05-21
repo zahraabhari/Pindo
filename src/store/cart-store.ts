@@ -1,3 +1,7 @@
+import {
+  COMMERCE_OFFLINE_MESSAGE,
+  isCommerceOnline,
+} from "@/lib/commerce/offline-commerce";
 import type { CartItem, CartToast } from "@/types/cart";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
@@ -29,6 +33,11 @@ export const useCartStore = create<CartState>()(
       toast: null,
 
       addItem: (product) => {
+        if (!isCommerceOnline()) {
+          get().showToast(COMMERCE_OFFLINE_MESSAGE);
+          return;
+        }
+
         const existing = get().items.find((i) => i.id === product.id);
         const nextItems = existing
           ? get().items.map((i) =>
@@ -60,6 +69,11 @@ export const useCartStore = create<CartState>()(
       },
 
       updateQuantity: (productId, delta) => {
+        if (delta > 0 && !isCommerceOnline()) {
+          get().showToast(COMMERCE_OFFLINE_MESSAGE);
+          return;
+        }
+
         const items = get().items.map((item) => {
           if (item.id !== productId) return item;
           const nextQty = item.quantity + delta;

@@ -1,4 +1,4 @@
-export type { FeedPage, FeedVideo } from "@/types/feed";
+export type { FeedSlice, FeedVideo } from "@/types/feed";
 
 export class FeedApiError extends Error {
   constructor(

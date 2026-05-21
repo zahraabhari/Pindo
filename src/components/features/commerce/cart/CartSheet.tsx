@@ -5,6 +5,8 @@ import type { CartCheckoutPhase } from "@/components/features/commerce/cart/Cart
 import { CartLineItem } from "@/components/features/commerce/cart/CartLineItem";
 import { BottomSheet } from "@/components/features/commerce/shared/BottomSheet";
 import { Button, Typography } from "@/components/ui";
+import { useCommerceOfflineGuard } from "@/hooks/use-commerce-offline-guard";
+import { COMMERCE_OFFLINE_MESSAGE } from "@/lib/commerce/offline-commerce";
 import { useCartStore } from "@/store/cart-store";
 import { useUiStore } from "@/store/ui-store";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -21,6 +23,7 @@ export function CartSheet() {
   const items = useCartStore((s) => s.items);
   const clearCart = useCartStore((s) => s.clearCart);
   const showToast = useCartStore((s) => s.showToast);
+  const { isOffline, guardCommerceAction } = useCommerceOfflineGuard();
 
   const open = sheet === "cart";
   const [checkoutPhase, setCheckoutPhase] = useState<CartCheckoutPhase>("idle");
@@ -55,6 +58,17 @@ export function CartSheet() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!isOffline || checkoutPhase === "idle") return;
+
+    if (checkoutTimerRef.current) {
+      clearTimeout(checkoutTimerRef.current);
+      checkoutTimerRef.current = null;
+    }
+    setCheckoutPhase("idle");
+    showToast(COMMERCE_OFFLINE_MESSAGE);
+  }, [isOffline, checkoutPhase, showToast]);
+
   const handleClear = useCallback(() => {
     if (checkoutPhase !== "idle") return;
     clearCart();
@@ -63,14 +77,16 @@ export function CartSheet() {
   const handleCheckout = useCallback(() => {
     if (items.length === 0 || checkoutPhase !== "idle") return;
 
-    setCheckoutPhase("processing");
-    checkoutTimerRef.current = setTimeout(() => {
-      setCheckoutPhase("success");
-      clearCart();
-      showToast("Purchase successful");
-      checkoutTimerRef.current = null;
-    }, CHECKOUT_DELAY_MS);
-  }, [items.length, checkoutPhase, clearCart, showToast]);
+    guardCommerceAction(() => {
+      setCheckoutPhase("processing");
+      checkoutTimerRef.current = setTimeout(() => {
+        setCheckoutPhase("success");
+        clearCart();
+        showToast("Purchase successful");
+        checkoutTimerRef.current = null;
+      }, CHECKOUT_DELAY_MS);
+    });
+  }, [items.length, checkoutPhase, clearCart, showToast, guardCommerceAction]);
 
   const handleCheckoutDone = useCallback(() => {
     setCheckoutPhase("idle");
@@ -114,13 +130,24 @@ export function CartSheet() {
                 </Typography>
               </div>
 
+              {isOffline && (
+                <Typography
+                  variant="caption-md"
+                  as="p"
+                  className="mb-3 text-center text-amber-200/90"
+                >
+                  {COMMERCE_OFFLINE_MESSAGE}
+                </Typography>
+              )}
+
               <Button
                 type="button"
                 variant="primary"
                 size="md"
                 fullWidth
                 onClick={handleCheckout}
-                className="mb-4 font-bold"
+                disabled={isOffline}
+                className="mb-4 font-bold disabled:opacity-50"
               >
                 Checkout · Pay
               </Button>

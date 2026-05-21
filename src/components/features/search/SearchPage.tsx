@@ -5,9 +5,12 @@ import { SearchExpandedItem } from "@/components/features/search/SearchExpandedI
 import { DiscoverSkeleton } from "@/components/features/search/DiscoverSkeleton";
 import { SearchBar } from "@/components/features/search/SearchBar";
 import { SearchExploreStrip } from "@/components/features/search/SearchExploreStrip";
+import { OfflineEmptyState } from "@/components/features/shared/OfflineEmptyState";
 import { dedupeDiscoveryItems } from "@/services/search/search.dedupe";
 import { FEED_SEARCH_QUERY } from "@/services/feed/feed.keys";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { useOnlineStatus } from "@/hooks/use-online-status";
+import { useQueryRestore } from "@/hooks/use-query-restore";
 import {
   useDiscoverColumnWidth,
   useDiscoverySearch,
@@ -22,6 +25,8 @@ export function SearchPage() {
   const debounced = useDebouncedValue(input, 350);
   const addHistory = useSearchStore((s) => s.addHistory);
   const query = useDiscoverySearch(debounced);
+  const { isOffline } = useOnlineStatus();
+  const { isRestoring } = useQueryRestore();
 
   const items = useMemo(
     () =>
@@ -37,8 +42,14 @@ export function SearchPage() {
   const isFetchingNew =
     query.isFetching && !query.isFetchingNextPage && !query.isError;
 
+  const isInitialLoading =
+    !query.hasCachedItems && !query.isError && query.isPending;
+
   const showSkeleton =
-    !query.isError && (isDebouncing || isFetchingNew || query.isPending);
+    isRestoring ||
+    isInitialLoading ||
+    (isDebouncing && !query.hasCachedItems) ||
+    (isFetchingNew && !query.hasCachedItems);
 
   useEffect(() => {
     if (debounced.trim()) addHistory(debounced);
@@ -78,6 +89,12 @@ export function SearchPage() {
       <div className="relative min-h-0 flex-1 overflow-hidden">
         {showSkeleton ? (
           <DiscoverSkeleton />
+        ) : isOffline && items.length === 0 ? (
+          <OfflineEmptyState
+            title="You're offline"
+            description="Search results you've viewed before will appear here. Try a query you used while online."
+            onRetry={() => void query.refetch()}
+          />
         ) : query.isError && items.length === 0 ? (
           <div className="flex flex-col items-center gap-3 px-6 py-16 text-center">
             <p className="text-sm text-white/70">Could not load discover feed.</p>
@@ -99,7 +116,9 @@ export function SearchPage() {
             columnWidth={columnWidth}
             hasNextPage={query.hasNextPage ?? false}
             isFetchingNextPage={query.isFetchingNextPage}
-            onLoadMore={() => void query.fetchNextPage()}
+            onLoadMore={() => {
+              if (!isOffline) void query.fetchNextPage();
+            }}
             onOpenItem={openItem}
             className={activeItem ? "pointer-events-none opacity-0" : ""}
           />

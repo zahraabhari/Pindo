@@ -20,9 +20,9 @@ function FeedSkeletonCard({ height }: { height: number }) {
       </div>
 
       <div className="absolute bottom-32 right-3 flex flex-col gap-4">
-        <Skeleton className="h-11 w-11" rounded="full" />
-        <Skeleton className="h-11 w-11" rounded="full" />
-        <Skeleton className="h-11 w-11" rounded="full" />
+        <Skeleton className="h-10 w-10" rounded="full" />
+        <Skeleton className="h-10 w-10" rounded="full" />
+        <Skeleton className="h-10 w-10" rounded="full" />
       </div>
     </div>
   );

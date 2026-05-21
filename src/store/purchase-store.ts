@@ -1,4 +1,5 @@
 
+import { isCommerceOnline } from "@/lib/commerce/offline-commerce";
 import { create } from "zustand";
 import type { PurchasePhase, PurchaseSession } from "@/types/commerce";
 
@@ -15,6 +16,8 @@ export const usePurchaseStore = create<PurchaseStore>((set, get) => ({
   session: null,
 
   startPurchase: (videoId, productTitle, username) => {
+    if (!isCommerceOnline()) return;
+
     if (purchaseTimer) clearTimeout(purchaseTimer);
 
     set({

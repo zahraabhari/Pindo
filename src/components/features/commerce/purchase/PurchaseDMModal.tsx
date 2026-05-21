@@ -2,6 +2,8 @@
 
 import { BottomSheet } from "@/components/features/commerce/shared/BottomSheet";
 import { Button, Icon, Typography } from "@/components/ui";
+import { useCommerceOfflineGuard } from "@/hooks/use-commerce-offline-guard";
+import { COMMERCE_OFFLINE_MESSAGE } from "@/lib/commerce/offline-commerce";
 import { usePurchaseStore } from "@/store/purchase-store";
 import { useUiStore } from "@/store/ui-store";
 import { useEffect, useMemo } from "react";
@@ -12,6 +14,7 @@ export function PurchaseDMModal() {
   const purchaseSnapshot = useUiStore((s) => s.purchaseSnapshot);
   const purchaseIntent = useUiStore((s) => s.purchaseIntent);
   const closeSheet = useUiStore((s) => s.closeSheet);
+  const { isOffline, canRunCommerceAction } = useCommerceOfflineGuard();
 
   const session = usePurchaseStore((s) => s.session);
   const startPurchase = usePurchaseStore((s) => s.startPurchase);
@@ -28,7 +31,7 @@ export function PurchaseDMModal() {
   }, [purchaseSnapshot?.sellerUsername]);
 
   useEffect(() => {
-    if (!open || !videoId) return;
+    if (!open || !videoId || isOffline) return;
     if (purchaseIntent !== "message") return;
     if (session?.videoId === videoId) return;
 
@@ -39,6 +42,7 @@ export function PurchaseDMModal() {
   }, [
     open,
     videoId,
+    isOffline,
     purchaseIntent,
     purchaseSnapshot,
     productTitle,
@@ -52,7 +56,8 @@ export function PurchaseDMModal() {
     closeSheet();
   };
 
-  const phase = session?.videoId === videoId ? session.phase : "pending";
+  const hasSession = session?.videoId === videoId;
+  const phase = hasSession ? session.phase : "idle";
   const isMessage = purchaseIntent === "message";
 
   const sheetTitle = isMessage ? "Message seller" : "Order via DM";
@@ -115,7 +120,17 @@ export function PurchaseDMModal() {
           </div>
         </div>
 
-        {phase === "pending" && (
+        {isOffline && !hasSession && (
+          <div className="flex justify-end">
+            <div className="max-w-[85%] rounded-2xl rounded-br-sm bg-amber-500/15 px-4 py-3 ring-1 ring-amber-500/30">
+              <Typography variant="body" className="text-amber-100/95">
+                {COMMERCE_OFFLINE_MESSAGE}
+              </Typography>
+            </div>
+          </div>
+        )}
+
+        {canRunCommerceAction && phase === "pending" && (
           <div className="flex justify-end">
             <div className="max-w-[85%] space-y-3 rounded-2xl rounded-br-sm bg-emerald-600/20 px-4 py-4">
               {pendingBody}
@@ -123,7 +138,7 @@ export function PurchaseDMModal() {
           </div>
         )}
 
-        {phase === "success" && (
+        {canRunCommerceAction && phase === "success" && (
           <div className="dm-success-in flex justify-end">
             <div className="max-w-[85%] space-y-3 rounded-2xl rounded-br-sm bg-emerald-600/30 px-4 py-4">
               <div className="flex items-center gap-2">
@@ -147,6 +162,19 @@ export function PurchaseDMModal() {
             className="mt-2"
           >
             Done
+          </Button>
+        )}
+
+        {isOffline && !hasSession && (
+          <Button
+            type="button"
+            variant="secondary"
+            size="lg"
+            fullWidth
+            onClick={handleClose}
+            className="mt-2"
+          >
+            Close
           </Button>
         )}
       </div>

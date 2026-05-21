@@ -10,6 +10,10 @@ export {
   shouldForceMockFeed,
 } from "@/services/pexels/pexels.config";
 
-export { fetchPexelsSearchPage, PexelsApiError } from "@/services/pexels/pexels.client";
+export {
+  fetchPexelsFeedSlice,
+  fetchPexelsSearchPage,
+  PexelsApiError,
+} from "@/services/pexels/pexels.client";
 export { pexelsVideoToFeedVideo } from "@/services/pexels/pexels.mapper";
 export { fetchDiscoveryPageFromPexels } from "@/services/pexels/discovery.server";

@@ -1,43 +1,120 @@
 "use client";
 
 import { enrichFeedVideos } from "@/services/commerce/enrich-product";
-import { fetchFeedPage } from "@/services/feed/feed.api";
+import { refreshFeedStreamHead } from "@/services/feed/feed-cache";
+import { fetchFeedSlice } from "@/services/feed/feed.api";
 import { FEED_QUERY_KEY, FEED_SEARCH_QUERY } from "@/services/feed/feed.keys";
-import type { FeedPage, FeedVideo } from "@/services/feed/feed.types";
+import { flattenFeedSlices } from "@/services/feed/feed.stream";
+import { FeedApiError, type FeedSlice, type FeedVideo } from "@/services/feed/feed.types";
 import { playbackEngine } from "@/services/feed/playback-engine";
+import {
+  FEED_GC_TIME_MS,
+  FEED_STALE_TIME_MS,
+  isNetworkOnline,
+  refetchWhenOnline,
+  shouldRetryQuery,
+} from "@/services/query/query-config";
 import { subscribePlaybackEngine, usePlaybackStore } from "@/store/playback-store";
 import { useFeedRuntimeStore } from "@/store/feed-runtime-store";
 import { useStableCallback } from "@/utils/stable-callback";
-import { useInfiniteQuery } from "@tanstack/react-query";
-import { useEffect, useRef } from "react";
+import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useRef, useState } from "react";
 
 export { FEED_QUERY_KEY, FEED_SEARCH_QUERY, feedQueryKey } from "@/services/feed/feed.keys";
-export { fetchFeedPage, getLastFeedSource } from "@/services/feed/feed.api";
-export type { FeedPage, FeedVideo } from "@/services/feed/feed.types";
+export { fetchFeedSlice, fetchFeedHead, getLastFeedSource } from "@/services/feed/feed.api";
+export type { FeedSlice, FeedVideo } from "@/services/feed/feed.types";
 export { FeedApiError } from "@/services/feed/feed.types";
 
+const INITIAL_CURSOR = null as string | null;
+
 export function useFeedInfinite() {
+  const queryClient = useQueryClient();
+  const [isHeadRefreshing, setIsHeadRefreshing] = useState(false);
+
   const query = useInfiniteQuery({
     queryKey: FEED_QUERY_KEY,
-    queryFn: ({ pageParam }) =>
-      fetchFeedPage(pageParam as number, FEED_SEARCH_QUERY),
-    initialPageParam: 1,
-    getNextPageParam: (last: FeedPage) => last.nextPage ?? undefined,
-    staleTime: 60_000,
-    gcTime: 5 * 60_000,
-    retry: 2,
+    queryFn: ({ pageParam }) => {
+      const cursor = pageParam as string | null;
+      if (cursor !== null && !isNetworkOnline()) {
+        return Promise.resolve({
+          items: [],
+          nextCursor: null,
+          hasMore: false,
+          source: "cache" as const,
+        });
+      }
+      return fetchFeedSlice(cursor, FEED_SEARCH_QUERY);
+    },
+    initialPageParam: INITIAL_CURSOR,
+    getNextPageParam: (last: FeedSlice) =>
+      last.hasMore && last.nextCursor ? last.nextCursor : undefined,
+    staleTime: FEED_STALE_TIME_MS,
+    gcTime: FEED_GC_TIME_MS,
+    networkMode: "offlineFirst",
+    structuralSharing: true,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    retry: (failureCount) => shouldRetryQuery(failureCount),
     retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 8000),
   });
 
   const videos: FeedVideo[] = enrichFeedVideos(
-    query.data?.pages.flatMap((p) => p.videos) ?? [],
+    flattenFeedSlices(query.data?.pages ?? []),
   );
 
-  const feedSource = query.data?.pages[0]?.source ?? "mock";
-  const searchQuery =
-    query.data?.pages[0]?.searchQuery ?? FEED_SEARCH_QUERY;
+  const firstSlice = query.data?.pages[0];
+  const upstreamSource = firstSlice?.source ?? "mock";
+  const feedSource =
+    query.isError && videos.length > 0 ? "cache" : upstreamSource;
+  const searchQuery = firstSlice?.searchQuery ?? FEED_SEARCH_QUERY;
 
-  return { ...query, videos, feedSource, searchQuery };
+  const hasCachedVideos = videos.length > 0;
+  const isOnline = isNetworkOnline();
+
+  const isInitialLoading = !hasCachedVideos && query.isPending && !query.isError;
+
+  const isBackgroundRefreshing = isOnline && isHeadRefreshing;
+
+  const runHeadSync = useStableCallback(async () => {
+    if (!refetchWhenOnline()) return;
+    if (!query.data?.pages.length || !query.isStale) return;
+    if (isHeadRefreshing || query.isFetchingNextPage) return;
+
+    setIsHeadRefreshing(true);
+    try {
+      await refreshFeedStreamHead(queryClient);
+    } finally {
+      setIsHeadRefreshing(false);
+    }
+  });
+
+  useEffect(() => {
+    void runHeadSync();
+  }, [runHeadSync]);
+
+  useEffect(() => {
+    const onFocus = () => void runHeadSync();
+    const onOnline = () => void runHeadSync();
+    window.addEventListener("focus", onFocus);
+    window.addEventListener("online", onOnline);
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      window.removeEventListener("online", onOnline);
+    };
+  }, [runHeadSync]);
+
+  return {
+    ...query,
+    videos,
+    feedSource,
+    searchQuery,
+    hasCachedVideos,
+    isInitialLoading,
+    isBackgroundRefreshing,
+    isHeadRefreshing,
+    isOnline,
+  };
 }
 
 export function useFeedOrchestrator() {
@@ -72,13 +149,18 @@ export function useFeedOrchestrator() {
 
   const onRangeChanged = useStableCallback(
     (range: { startIndex: number; endIndex: number }) => {
-      const { videos } = feedQuery;
+      const { videos, isOnline } = feedQuery;
       if (videos.length === 0) return;
 
       const activeIndex = Math.round((range.startIndex + range.endIndex) / 2);
       bumpScheduler(activeIndex, videos.length);
 
-      if (feedQuery.hasNextPage && !feedQuery.isFetchingNextPage) {
+      if (
+        isOnline &&
+        feedQuery.hasNextPage &&
+        !feedQuery.isFetchingNextPage &&
+        !feedQuery.isHeadRefreshing
+      ) {
         const depth = (activeIndex + 1) / videos.length;
         if (depth >= 0.85) {
           void feedQuery.fetchNextPage();

@@ -9,8 +9,9 @@ import {
   useComments,
   useLiveCommentSimulation,
 } from "@/services/comments/comments.hooks";
+import { useOnlineStatus } from "@/hooks/use-online-status";
 import { useUiStore } from "@/store/ui-store";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 
 export function CommentSheet() {
   const sheet = useUiStore((s) => s.sheet);
@@ -18,14 +19,22 @@ export function CommentSheet() {
   const closeSheet = useUiStore((s) => s.closeSheet);
   const open = sheet === "comments" && Boolean(videoId);
 
+  /** Keep query key stable during close animation so cached list does not flash skeleton */
+  const lastVideoIdRef = useRef<string | null>(null);
+  if (open && videoId) {
+    lastVideoIdRef.current = videoId;
+  }
+  const queryVideoId = open ? videoId : lastVideoIdRef.current;
+
   const {
     data: comments,
     isPending,
     isError,
     refetch,
     isFetching,
-  } = useComments(open ? videoId : null);
+  } = useComments(queryVideoId, { enabled: open });
   const addComment = useAddComment(open ? videoId : null);
+  const { isOffline } = useOnlineStatus();
   const [draft, setDraft] = useState("");
 
   useLiveCommentSimulation(open ? videoId : null, open);
@@ -45,7 +54,8 @@ export function CommentSheet() {
     setDraft("");
   }, [draft, addComment]);
 
-  const showLoading = isPending && list.length === 0;
+  const showLoading = open && isPending && list.length === 0;
+  const showError = open && isError && list.length === 0;
 
   return (
     <BottomSheet open={open} onClose={closeSheet} title={countLabel}>
@@ -57,7 +67,7 @@ export function CommentSheet() {
                 <CommentRowSkeleton key={i} />
               ))}
             </ul>
-          ) : isError ? (
+          ) : showError ? (
             <div className="flex flex-col items-center gap-3 px-4 py-8">
               <Typography variant="body-muted">Could not load comments.</Typography>
               <Button
@@ -80,9 +90,14 @@ export function CommentSheet() {
               ))}
             </ul>
           )}
-          {isFetching && list.length > 0 && (
+          {isFetching && list.length > 0 && !isOffline && (
             <p className="py-1.5 text-center text-[10px] text-white/35">
               Updating…
+            </p>
+          )}
+          {isOffline && list.length > 0 && (
+            <p className="py-1.5 text-center text-[10px] text-white/35">
+              Offline — showing saved comments
             </p>
           )}
         </div>
@@ -93,14 +108,17 @@ export function CommentSheet() {
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && onSubmit()}
-              placeholder="Add a comment…"
+              placeholder={
+                isOffline ? "Comments post when you're online" : "Add a comment…"
+              }
+              disabled={isOffline}
               className="flex-1 bg-white/10 px-3 py-2 text-[13px] focus-visible:ring-emerald-500/40"
             />
             <Button
               type="button"
               variant="primary"
               size="sm"
-              disabled={!draft.trim() || addComment.isPending}
+              disabled={!draft.trim() || addComment.isPending || isOffline}
               onClick={onSubmit}
               className="shrink-0 px-3.5"
             >

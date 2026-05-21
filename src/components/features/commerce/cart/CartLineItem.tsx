@@ -1,6 +1,7 @@
 "use client";
 
 import { Button, Typography } from "@/components/ui";
+import { useCommerceOfflineGuard } from "@/hooks/use-commerce-offline-guard";
 import { useCartStore } from "@/store/cart-store";
 import type { CartItem } from "@/types/cart";
 import Image from "next/image";
@@ -17,6 +18,7 @@ interface CartLineItemProps {
 function CartLineItemInner({ item }: CartLineItemProps) {
   const updateQuantity = useCartStore((s) => s.updateQuantity);
   const removeItem = useCartStore((s) => s.removeItem);
+  const { guardCommerceAction, isOffline } = useCommerceOfflineGuard();
 
   const lineTotal = item.price * item.quantity;
 
@@ -25,8 +27,8 @@ function CartLineItemInner({ item }: CartLineItemProps) {
   }, [item.id, updateQuantity]);
 
   const onIncrement = useCallback(() => {
-    updateQuantity(item.id, 1);
-  }, [item.id, updateQuantity]);
+    guardCommerceAction(() => updateQuantity(item.id, 1));
+  }, [item.id, updateQuantity, guardCommerceAction]);
 
   const onRemove = useCallback(() => {
     removeItem(item.id);
@@ -82,7 +84,8 @@ function CartLineItemInner({ item }: CartLineItemProps) {
               size="icon-sm"
               aria-label="Increase quantity"
               onClick={onIncrement}
-              className="h-8 w-8 min-w-8 text-lg leading-none transition-transform active:scale-90"
+              disabled={isOffline}
+              className="h-8 w-8 min-w-8 text-lg leading-none transition-transform active:scale-90 disabled:opacity-40"
             >
               +
             </Button>
