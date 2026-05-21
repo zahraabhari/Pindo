@@ -5,6 +5,7 @@ import { SearchExpandedItem } from "@/components/features/search/SearchExpandedI
 import { DiscoverSkeleton } from "@/components/features/search/DiscoverSkeleton";
 import { SearchBar } from "@/components/features/search/SearchBar";
 import { SearchExploreStrip } from "@/components/features/search/SearchExploreStrip";
+import { EmptyState } from "@/components/features/shared/EmptyState";
 import { OfflineEmptyState } from "@/components/features/shared/OfflineEmptyState";
 import { dedupeDiscoveryItems } from "@/services/search/search.dedupe";
 import { FEED_SEARCH_QUERY } from "@/services/feed/feed.keys";
@@ -96,20 +97,21 @@ export function SearchPage() {
             onRetry={() => void query.refetch()}
           />
         ) : query.isError && items.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 px-6 py-16 text-center">
-            <p className="text-sm text-white/70">Could not load discover feed.</p>
-            <button
-              type="button"
-              onClick={() => void query.refetch()}
-              className="rounded-full bg-white/10 px-4 py-2 text-sm"
-            >
-              Retry
-            </button>
-          </div>
+          <EmptyState
+            icon="error"
+            title="Could not load discover"
+            description="Check your connection or try again in a moment."
+            actionLabel="Retry"
+            onAction={() => void query.refetch()}
+          />
         ) : items.length === 0 ? (
-          <p className="py-16 text-center text-sm text-white/50">
-            No results for &ldquo;{debounced}&rdquo;
-          </p>
+          <EmptyState
+            icon="search"
+            title="No results"
+            description={`Nothing found for "${debounced}". Try another search or explore a topic below.`}
+            actionLabel="Retry"
+            onAction={() => void query.refetch()}
+          />
         ) : (
           <DiscoverGrid
             items={items}

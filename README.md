@@ -42,7 +42,7 @@ Offline behavior is implemented **only at the data/cache layer** — not as a fu
 ### Design intent (cache-first, deliberate scope)
 
 - **Cache-first is intentional:** The feed is meant to feel instant on revisit — hydrate persisted React Query state, then reconcile with the network when online.
-- **React Query persistence only:** `services/query/query-persistence.ts` dehydrates successful `feed`, `discover`, and `comments` queries to `localStorage` (`pindo-rq-cache-v3`). No Service Worker — that omission is a **scope decision**, not an oversight.
+- **React Query persistence only:** `services/query/query-persistence.ts` dehydrates successful `feed`, `discover`, and `comments` queries to `localStorage` (`pindo-rq-cache-v4`). No Service Worker — that omission is a **scope decision**, not an oversight.
 - **Browser-level offline refresh failure is expected:** A hard refresh while offline may fail before JavaScript runs (Next.js must load the document and bundles). That gap is documented and accepted; soft navigation within an already-loaded session is the supported offline path.
 
 ### What is implemented
@@ -157,7 +157,7 @@ This migration aligns the feed architecture with real-world systems like Instagr
 |------|---------|
 | **More complex data layer** — cursor encoding, infinite query segments, head merge (`feed-cache.ts`, `feed.stream.ts`) | **UX stability** — no feed reset on refresh; scroll depth preserved |
 | **Harder debugging** — opaque cursors vs “page 3” in DevTools | **Scalable mental model** — one stream, server-owned ordering |
-| **Cache reconciliation** — dedup, structural sharing, persist buster migrations (`pindo-rq-cache-v3`) | **Cache-first UX** — instant render, silent background head update |
+| **Cache reconciliation** — dedup, structural sharing, persist buster migrations (`pindo-rq-cache-v4`) | **Cache-first UX** — instant render, silent background head update |
 | **Stronger API contract coupling** — client must honor `nextCursor` / head shape | **Production-like boundary** — same contract a real BFF would expose |
 
 Page-based pagination is simpler to reason about in tutorials; cursor + head merge is the trade-off chosen here because **feed consistency and revisit behavior** matter more than minimal LOC for a take-home focused on system design.
@@ -220,6 +220,26 @@ NEXT_PUBLIC_USE_MOCK_FEED=true   # static CDN URLs, no Pexels API calls
 2. Use DevTools → **Network → Offline** (or airplane mode).
 3. Navigate within the app — cached reels and discovery should remain browsable; banner shows offline state.
 4. **Hard refresh while offline** may fail at the browser level — see [Offline support (limitations)](#offline-support-limitations).
+
+### Empty states (dev / QA)
+
+Shared UI: `components/features/shared/EmptyState.tsx` (icon, title, description, optional retry). Offline-specific copy uses `OfflineEmptyState.tsx`. Global hint: `OfflineBanner.tsx`.
+
+| Surface | Where | State | How to trigger |
+|---------|--------|-------|----------------|
+| **Feed** | `VirtualizedFeed.tsx` | Offline, no cached reels | Network offline before any successful feed load |
+| **Feed** | `VirtualizedFeed.tsx` | API error | Missing/invalid `PEXELS_API_KEY` (with no mock fallback data in cache) |
+| **Feed** | `VirtualizedFeed.tsx` | No reels | Successful fetch with zero items (uncommon with mock/Pexels fallback) |
+| **Search** | `SearchPage.tsx` | Offline, no cached grid | Offline + no persisted `discover` data for the query |
+| **Search** | `SearchPage.tsx` | Load error | Discover API failure with empty cache |
+| **Search** | `SearchPage.tsx` | No results | Type **`__empty__`** in the search bar (demo hook in `services/search/search.empty-demo.ts`; skips mock/Pexels fallback) |
+| **Comments** | `CommentSheet.tsx` | No comments | ~**1 in 7** reels by stable `videoId` (`isEmptyCommentsVideo` in `comment-seed.ts` — e.g. `mock-0`, `mock-7`, `mock-14`) |
+| **Comments** | `CommentSheet.tsx` | Load error | Comments API fails while the sheet is open |
+| **Cart** | `CartSheet.tsx` | Empty cart | Open cart with no line items |
+
+**Comments count vs list:** Overlay count uses the same seed as the sheet (`placeholderData` + `resolveCommentCount` in `comments.hooks.ts`) so a reel with zero seeded comments shows **0** on the rail and an empty list in the sheet — not “8 on the badge, empty in the sheet”. After changing comment seed rules, hard-refresh once so old `comments` entries in `localStorage` do not linger.
+
+**Search “no results”:** Normal queries (`nature`, `skincare`, …) almost always return mock or Pexels items. Only the reserved demo query `__empty__` returns an empty page on purpose.
 
 ---
 

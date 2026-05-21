@@ -69,7 +69,7 @@ On the client, successful query results may also be written to `localStorage` vi
 - **Contract**: `GET /api/videos?cursor=<opaque>` → `{ items, nextCursor, hasMore }`; opaque cursor encodes upstream position server-side (`feed.cursor.ts`).
 - **Single stream**: UI flattens infinite-query segments with stable id dedup (`feed.stream.ts`); no page numbers in client state.
 - **SWR head**: `GET /api/videos/head` + `refreshFeedStreamHead` merges new items into slice 0 and strips duplicates from tail — pagination cursors are not reset.
-- **Offline**: `networkMode: offlineFirst`; pagination `queryFn` no-ops when offline; persisted cache key `pindo-rq-cache-v3` (buster `3`).
+- **Offline**: `networkMode: offlineFirst`; pagination `queryFn` no-ops when offline; persisted cache key `pindo-rq-cache-v4` (buster `4`).
 
 ---
 
@@ -89,7 +89,7 @@ Offline support is **React Query persistence** — not Service Workers, not a PW
 
 ```
 QueryProvider (useLayoutEffect)
-  1. restoreQueryClient()  — hydrate from localStorage key `pindo-rq-cache-v1`
+  1. restoreQueryClient()  — hydrate from localStorage key `pindo-rq-cache-v4`
   2. setupQueryPersistence() — throttle-writes on query cache changes
 
 shouldPersistQuery()
@@ -169,6 +169,17 @@ Commerce components are intentionally thin:
 - Purchase modal can become a real checkout route without altering `useFeedOrchestrator`.
 
 **Future enhancements** (not implemented): server cart, payment intent, order history, seller messaging API.
+
+## Empty & degraded UI
+
+| Layer | Files |
+|-------|--------|
+| Shared empty layout | `components/features/shared/EmptyState.tsx`, `OfflineEmptyState.tsx` |
+| Feed / search / sheets | `VirtualizedFeed.tsx`, `SearchPage.tsx`, `CommentSheet.tsx`, `CartSheet.tsx` |
+| Search “no results” demo | `services/search/search.empty-demo.ts` — query `__empty__` returns `items: []` (no mock backfill) |
+| Comment empty seed | `services/commerce/comment-seed.ts` — `isEmptyCommentsVideo` (~1/7 reels); overlay count via `resolveCommentCount` in `comments.hooks.ts` |
+
+Step-by-step triggers for QA are in [README — Empty states (dev / QA)](./README.md#empty-states-dev--qa).
 
 ## State
 

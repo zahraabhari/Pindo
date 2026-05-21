@@ -12,9 +12,8 @@ import {
   shouldRetryQuery,
 } from "@/services/query/query-config";
 
-export const RQ_PERSIST_STORAGE_KEY = "pindo-rq-cache-v3";
-export const RQ_PERSIST_BUSTER = "3";
-/** Persisted cache TTL — survives refresh / offline revisit */
+export const RQ_PERSIST_STORAGE_KEY = "pindo-rq-cache-v4";
+export const RQ_PERSIST_BUSTER = "4";
 export const RQ_PERSIST_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 const PERSIST_THROTTLE_MS = 500;
 

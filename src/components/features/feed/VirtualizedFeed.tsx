@@ -3,6 +3,7 @@
 import { FeedItem } from "@/components/features/feed/FeedItem";
 import { FeedScroller } from "@/components/features/feed/FeedScroller";
 import { FeedSkeleton } from "@/components/features/feed/FeedSkeleton";
+import { EmptyState } from "@/components/features/shared/EmptyState";
 import { OfflineEmptyState } from "@/components/features/shared/OfflineEmptyState";
 import { FeedApiError, useFeedOrchestrator } from "@/services/feed/feed.hooks";
 import { useOnlineStatus } from "@/hooks/use-online-status";
@@ -45,6 +46,8 @@ export function VirtualizedFeed() {
     hasCachedVideos,
     isInitialLoading,
     isBackgroundRefreshing,
+    isFetching,
+    isSuccess,
   } = useFeedOrchestrator();
   const { isOffline } = useOnlineStatus();
   const itemHeight = useViewportHeight();
@@ -92,23 +95,35 @@ export function VirtualizedFeed() {
       error != null && error instanceof FeedApiError ? error : null;
 
     return (
-      <div className="flex h-dvh flex-col items-center justify-center gap-2 text-white/80">
-        <p className="text-lg font-medium text-white">
-          {apiError?.code === "missing_api_key"
-            ? "Pexels API key required"
-            : "Could not load feed"}
-        </p>
-        <p className="max-w-sm px-4 text-center text-sm text-white/60">
-          {apiError?.message ??
-            "Add PEXELS_API_KEY to .env.local and restart pnpm dev."}
-        </p>
-        <button
-          type="button"
-          className="rounded bg-white/10 px-4 py-2 text-sm hover:bg-white/20"
-          onClick={() => void refetch()}
-        >
-          Retry
-        </button>
+      <div className="flex h-dvh items-center justify-center">
+        <EmptyState
+          icon="error"
+          title={
+            apiError?.code === "missing_api_key"
+              ? "Pexels API key required"
+              : "Could not load feed"
+          }
+          description={
+            apiError?.message ??
+            "Add PEXELS_API_KEY to .env.local and restart pnpm dev."
+          }
+          actionLabel="Retry"
+          onAction={() => void refetch()}
+        />
+      </div>
+    );
+  }
+
+  if (!isOffline && videos.length === 0 && !isFetching && isSuccess) {
+    return (
+      <div className="flex h-dvh items-center justify-center">
+        <EmptyState
+          icon="empty"
+          title="No reels yet"
+          description={`Nothing matched "${searchQuery}". Try another topic or pull to refresh.`}
+          actionLabel="Refresh feed"
+          onAction={() => void refetch()}
+        />
       </div>
     );
   }

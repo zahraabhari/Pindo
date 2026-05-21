@@ -1,4 +1,5 @@
 import { dedupeDiscoveryItems } from "@/services/search/search.dedupe";
+import { isEmptySearchDemoQuery } from "@/services/search/search.empty-demo";
 import { fetchMockDiscoveryPage } from "@/services/search/search.mock";
 import { PexelsApiError } from "@/services/pexels/pexels.client";
 import {
@@ -15,12 +16,15 @@ import type { DiscoveryPage } from "@/types/discovery";
 import type { PexelsPhotosSearchResponse } from "@/types/pexels-photos";
 import type { PexelsVideosResponse } from "@/types/pexels";
 
-/** Server-only: Pexels photos + videos → DiscoveryPage */
 export async function fetchDiscoveryPageFromPexels(
   query: string,
   page: number,
   signal?: AbortSignal,
 ): Promise<DiscoveryPage> {
+  if (isEmptySearchDemoQuery(query)) {
+    return { items: [], nextPage: null, query, source: "pexels" };
+  }
+
   const apiKey = getPexelsApiKey();
   if (!apiKey) {
     return fetchMockDiscoveryPage(query, page);
@@ -68,7 +72,7 @@ export async function fetchDiscoveryPageFromPexels(
 
   const items = dedupeDiscoveryItems(interleaveDiscovery(photos, videos));
 
-  if (items.length === 0) {
+  if (items.length === 0 && !isEmptySearchDemoQuery(query)) {
     return fetchMockDiscoveryPage(query, page);
   }
 

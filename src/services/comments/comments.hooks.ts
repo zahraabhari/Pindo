@@ -1,6 +1,9 @@
 "use client";
 
-import { seedCommentsForVideo } from "@/services/commerce/comment-seed";
+import {
+  isEmptyCommentsVideo,
+  seedCommentsForVideo,
+} from "@/services/commerce/comment-seed";
 import { fetchComments, postComment } from "@/services/comments/comments.api";
 import {
   commentsLiveQueryKey,
@@ -14,19 +17,31 @@ import {
   useQueryClient,
   type UseQueryOptions,
 } from "@tanstack/react-query";
+import { useMemo } from "react";
 
 export { commentsQueryKey, commentsLiveQueryKey } from "@/services/comments/comments.keys";
 export type { Comment } from "@/services/comments/comments.types";
+
+function resolveCommentCount(
+  seed: Comment[],
+  cached: Comment[] | undefined,
+): number {
+  if (!cached) return seed.length;
+  if (seed.length === 0 && cached.length > 0) return 0;
+  return cached.length;
+}
 
 function commentsQueryOptions(
   videoId: string,
   enabled: boolean,
 ): UseQueryOptions<Comment[], Error, Comment[], ReturnType<typeof commentsQueryKey>> {
+  const seed = seedCommentsForVideo(videoId);
+
   return {
     queryKey: commentsQueryKey(videoId),
     queryFn: () => fetchComments(videoId),
     enabled,
-    initialData: () => seedCommentsForVideo(videoId),
+    placeholderData: seed,
     staleTime: 30_000,
     retry: (failureCount) => {
       if (typeof navigator !== "undefined" && !navigator.onLine) {
@@ -122,20 +137,25 @@ export function useLiveCommentSimulation(
       });
       return live;
     },
-    enabled: Boolean(videoId) && enabled && isOnline,
+    enabled:
+      videoId != null &&
+      enabled &&
+      isOnline &&
+      !isEmptyCommentsVideo(videoId),
     refetchInterval: isOnline ? 12_000 : false,
     staleTime: 0,
   });
 }
 
-/** Subscribes to the shared comments cache (overlay + sheet stay in sync). */
 export function useCommentCount(videoId: string) {
-  const { data, isFetching, isFetched } = useQuery(
-    commentsQueryOptions(videoId, false),
-  );
+  const seedList = useMemo(() => seedCommentsForVideo(videoId), [videoId]);
+  const { data, isFetching, isFetched } = useQuery({
+    ...commentsQueryOptions(videoId, false),
+    placeholderData: seedList,
+  });
 
   return {
-    count: data?.length ?? 0,
+    count: resolveCommentCount(seedList, data),
     isLoading: !isFetched && isFetching,
     hasData: isFetched,
   };

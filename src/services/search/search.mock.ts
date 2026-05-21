@@ -1,3 +1,4 @@
+import { isEmptySearchDemoQuery } from "@/services/search/search.empty-demo";
 import type { DiscoveryItem, DiscoveryPage } from "@/types/discovery";
 
 const SEEDS: Omit<DiscoveryItem, "id">[] = [
@@ -36,6 +37,10 @@ export async function fetchMockDiscoveryPage(
   page: number,
 ): Promise<DiscoveryPage> {
   await new Promise((r) => setTimeout(r, 200));
+
+  if (isEmptySearchDemoQuery(query)) {
+    return { items: [], nextPage: null, query, source: "mock" };
+  }
 
   const start = (page - 1) * 10;
   const items: DiscoveryItem[] = Array.from({ length: 10 }, (_, i) => {

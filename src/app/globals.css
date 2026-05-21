@@ -179,6 +179,24 @@ body {
   border: 1px solid var(--ds-color-border-subtle);
 }
 
+.search-bar-inner:focus-within {
+  border-color: var(--ds-color-border-subtle);
+  box-shadow: none;
+}
+
+.search-bar-input:focus,
+.search-bar-input:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+/* Avoid native search clear (second X) if type="search" is used elsewhere */
+.search-bar-input::-webkit-search-cancel-button,
+.search-bar-input::-webkit-search-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
 @keyframes shimmer {
   0% {
     opacity: 0.5;

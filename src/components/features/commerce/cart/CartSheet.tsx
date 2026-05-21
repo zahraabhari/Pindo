@@ -4,6 +4,7 @@ import { CartCheckoutStatus } from "@/components/features/commerce/cart/CartChec
 import type { CartCheckoutPhase } from "@/components/features/commerce/cart/CartCheckoutStatus";
 import { CartLineItem } from "@/components/features/commerce/cart/CartLineItem";
 import { BottomSheet } from "@/components/features/commerce/shared/BottomSheet";
+import { EmptyState } from "@/components/features/shared/EmptyState";
 import { Button, Typography } from "@/components/ui";
 import { useCommerceOfflineGuard } from "@/hooks/use-commerce-offline-guard";
 import { COMMERCE_OFFLINE_MESSAGE } from "@/lib/commerce/offline-commerce";
@@ -108,12 +109,12 @@ export function CartSheet() {
             onDone={handleCheckoutDone}
           />
         ) : items.length === 0 ? (
-          <Typography
-            variant="body-muted"
-            className="px-4 py-12 text-center text-[13px]"
-          >
-            Your cart is empty. Add products from the feed.
-          </Typography>
+          <EmptyState
+            icon="cart"
+            title="Your cart is empty"
+            description="Tap Add to cart on any reel with a product tag."
+            compact
+          />
         ) : (
           <>
             <ul className="min-h-0 flex-1 list-none overflow-y-auto overscroll-contain">

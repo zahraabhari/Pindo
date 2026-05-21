@@ -3,7 +3,8 @@
 import { CommentRow } from "@/components/features/commerce/comments/CommentRow";
 import { CommentRowSkeleton } from "@/components/features/commerce/comments/CommentRowSkeleton";
 import { BottomSheet } from "@/components/features/commerce/shared/BottomSheet";
-import { Button, Input, Typography } from "@/components/ui";
+import { EmptyState } from "@/components/features/shared/EmptyState";
+import { Button, Input } from "@/components/ui";
 import {
   useAddComment,
   useComments,
@@ -19,7 +20,7 @@ export function CommentSheet() {
   const closeSheet = useUiStore((s) => s.closeSheet);
   const open = sheet === "comments" && Boolean(videoId);
 
-  /** Keep query key stable during close animation so cached list does not flash skeleton */
+ 
   const lastVideoIdRef = useRef<string | null>(null);
   if (open && videoId) {
     lastVideoIdRef.current = videoId;
@@ -68,21 +69,21 @@ export function CommentSheet() {
               ))}
             </ul>
           ) : showError ? (
-            <div className="flex flex-col items-center gap-3 px-4 py-8">
-              <Typography variant="body-muted">Could not load comments.</Typography>
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                onClick={() => void refetch()}
-              >
-                Retry
-              </Button>
-            </div>
+            <EmptyState
+              icon="error"
+              title="Could not load comments"
+              description="Check your connection and try again."
+              actionLabel="Retry"
+              onAction={() => void refetch()}
+              compact
+            />
           ) : list.length === 0 ? (
-            <Typography variant="body-muted" className="px-4 py-8 text-center text-[13px]">
-              No comments yet. Be the first!
-            </Typography>
+            <EmptyState
+              icon="comments"
+              title="No comments yet"
+              description="Be the first to share your thoughts on this reel."
+              compact
+            />
           ) : (
             <ul className="list-none" role="list">
               {list.map((comment) => (

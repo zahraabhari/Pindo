@@ -1,7 +1,7 @@
 "use client";
 
 import { CartIconButton } from "@/components/features/commerce/cart/CartIconButton";
-import { Button, Icon, Input } from "@/components/ui";
+import { Icon, Input } from "@/components/ui";
 
 interface SearchBarProps {
   value: string;
@@ -10,32 +10,35 @@ interface SearchBarProps {
 }
 
 export function SearchBar({ value, onChange, onClear }: SearchBarProps) {
+  const hasValue = value.length > 0;
+
   return (
     <div className="search-bar-wrap sticky top-0 z-30 px-3 pb-1.5 pt-[max(0.5rem,env(safe-area-inset-top))]">
       <div className="flex items-center gap-2">
-        <label className="search-bar-inner flex min-w-0 flex-1 items-center gap-2 rounded-2xl px-3 py-2.5 transition-shadow focus-within:ring-1 focus-within:ring-emerald-500/40">
+        <label className="search-bar-inner flex min-w-0 flex-1 items-center gap-2 rounded-2xl px-3 py-2.5">
           <Icon name="search" size="md" className="shrink-0 text-white/60" />
           <Input
-            type="search"
+            type="text"
+            inputMode="search"
+            role="searchbox"
             value={value}
             onChange={(e) => onChange(e.target.value)}
             placeholder="Search products, nature…"
-            className="min-w-0 flex-1 focus-visible:ring-0"
+            rounded="md"
+            className="search-bar-input min-w-0 flex-1 rounded-none border-0 bg-transparent px-0 py-0 shadow-none outline-none ring-0 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:!ring-0"
             autoComplete="off"
             enterKeyHint="search"
           />
-          {value.length > 0 && (
-            <Button
+          {hasValue ? (
+            <button
               type="button"
-              variant="ghost"
-              size="sm"
               onClick={onClear}
               aria-label="Clear search"
-              className="shrink-0 rounded-full bg-white/10 px-2 py-1 text-white/70"
+              className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white/80 transition-colors hover:bg-white/15 hover:text-white"
             >
               <Icon name="x" size="sm" />
-            </Button>
-          )}
+            </button>
+          ) : null}
         </label>
         <div className="shrink-0">
           <CartIconButton />
